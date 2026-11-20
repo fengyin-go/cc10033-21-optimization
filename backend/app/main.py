@@ -35,6 +35,7 @@ def overview() -> dict[str, object]:
 
 
 # 资源路由含 /api/{module}，必须放在 health / overview 之后注册，
-# 否则固定路径会被动态路径抢先匹配。
+# 否则固定路径会被动态路径抢先匹配；固定路径路由（/api/delivery/...）
+# 已在 ROUTERS 中排到资源路由之前。
 for module in ROUTERS:
     app.include_router(module.router)

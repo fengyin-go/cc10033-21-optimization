@@ -41,6 +41,7 @@
       <thead>
         <tr>
           <th v-for="column in meta.fields" :key="column">{{ column }}</th>
+          <th v-for="column in extraColumns" :key="column">{{ column }}</th>
           <th>当前状态</th>
           <th>可执行动作</th>
         </tr>
@@ -48,6 +49,7 @@
       <tbody>
         <tr v-for="row in rows" :key="String(row.id)" :data-testid="`row-${row.id}`" :data-status="String(row.status)">
           <td v-for="column in meta.fields" :key="column">{{ row[column] ?? '—' }}</td>
+          <td v-for="column in extraColumns" :key="column">{{ formatExtra(row[column]) }}</td>
           <td>{{ row.status }}</td>
           <td class="row-actions">
             <button
@@ -60,10 +62,18 @@
             >
               {{ action }}
             </button>
+            <RouterLink
+              v-if="meta.key === 'deploy_pipeline'"
+              class="link"
+              :to="row.交付清单ID ? `/delivery?manifest=${row.交付清单ID}` : '/delivery'"
+              :data-testid="`manifest-link-${row.id}`"
+            >
+              分区交付清单
+            </RouterLink>
           </td>
         </tr>
         <tr v-if="!rows.length">
-          <td :colspan="meta.fields.length + 2" class="empty-state">
+          <td :colspan="meta.fields.length + extraColumns.length + 2" class="empty-state">
             暂无{{ meta.name }}数据，可先登记{{ meta.entity }}
           </td>
         </tr>
@@ -129,6 +139,22 @@ const statusSummary = computed(() =>
     count: rows.value.filter((row) => String(row.status) === status).length,
   })),
 )
+
+// 部署任务额外展示分区交付进度：哪些分区已交付、哪些还压在流水线上。
+const extraColumns = computed(() =>
+  meta.key === 'deploy_pipeline' ? ['交付清单编号', '已交付分区', '未交付分区', '错误字段'] : [],
+)
+
+function formatExtra(value: EntryRow[string] | undefined): string {
+  if (value === undefined || value === null || value === '') return '—'
+  if (Array.isArray(value)) return value.length ? value.join('、') : '—'
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+    if (!entries.length) return '—'
+    return entries.map(([key, item]) => `${key}: ${String(item)}`).join('；')
+  }
+  return String(value)
+}
 
 function resetFilters() {
   filters.value = {}

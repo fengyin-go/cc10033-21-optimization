@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from app.delivery_registry import DeliveryRegistry
 from app.seed import SEED_ROWS
 
 
@@ -318,6 +319,10 @@ class ArtifactRegistry:
 
 class Store:
     def __init__(self) -> None:
+        self.reset()
+
+    def reset(self) -> None:
+        """重置为种子数据：测试和演示环境用它拿到干净的仓库，同时保留单例引用。"""
         self._tables: dict[str, list[dict[str, Any]]] = {
             name: [dict(row) for row in rows] for name, rows in SEED_ROWS.items()
         }
@@ -325,6 +330,7 @@ class Store:
         self.recovery = FailureRecovery()
         self.snapshot = SnapshotEngine()
         self.artifacts = ArtifactRegistry()
+        self.delivery = DeliveryRegistry(self)
 
     def module_names(self) -> list[str]:
         return sorted(self._tables)
